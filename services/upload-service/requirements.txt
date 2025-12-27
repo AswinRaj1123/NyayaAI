@@ -4,3 +4,6 @@ python-docx
 kafka-python
 sqlalchemy
 alembic
+psycopg2-binary
+fastapi
+uvicorn
