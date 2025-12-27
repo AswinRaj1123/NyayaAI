@@ -1,0 +1,6 @@
+python-multipart
+PyPDF2
+python-docx
+kafka-python
+sqlalchemy
+alembic
