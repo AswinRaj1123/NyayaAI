@@ -4,6 +4,7 @@ import DocumentUpload from './components/DocumentUpload';
 
 function App() {
   const { user, login, register, logout } = useContext(AuthContext);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -33,7 +34,7 @@ function App() {
         <h1>Welcome, {user.full_name || user.email}!</h1>
         <p>You are logged in.</p>
 
-        {/* ✅ Document Upload Component */}
+        {/* ✅ Document Upload & List */}
         <DocumentUpload />
 
         <br />
@@ -91,8 +92,9 @@ function App() {
         <button
           type="button"
           onClick={() => setIsRegister(!isRegister)}
+          style={{ marginLeft: '0.5rem' }}
         >
-          {isRegister ? ' Login' : ' Register'}
+          {isRegister ? 'Login' : 'Register'}
         </button>
       </p>
     </div>

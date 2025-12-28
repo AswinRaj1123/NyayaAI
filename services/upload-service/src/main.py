@@ -1,28 +1,47 @@
-from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
+from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import os
 import uuid
 from datetime import datetime
+from jose import JWTError, jwt
 
 from .database import get_db, engine
 from .models import Base, Document
 from .utils.extraction import extract_text
 from .utils.kafka_producer import publish_document_uploaded
 
-# -----------------------------
-# TEMP AUTH (Mock User)
-# -----------------------------
-class User:
-    def __init__(self, id: int):
-        self.id = id
+# Constants (match auth-service)
+SECRET_KEY = "your-super-secret-key-change-in-prod"
+ALGORITHM = "HS256"
 
-async def get_current_user():
+class User:
+    def __init__(self, email: str):
+        self.email = email
+        self.id = 1  # Placeholder
+
+async def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)):
     """
-    TEMP MOCK AUTH
-    Replace with JWT validation in Stage 4
+    Validate JWT token from Authorization header
     """
-    return User(id=1)
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+    
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Invalid authentication scheme")
+        
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid authorization header format")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    return User(email=email)
 
 # -----------------------------
 # APP INIT
@@ -105,6 +124,7 @@ async def upload_document(
         "document_id": document.id,
         "user_id": current_user.id,
         "filename": document.filename,
+        "extracted_text": extracted_text,
         "timestamp": datetime.utcnow().isoformat(),
     }
 
@@ -116,6 +136,23 @@ async def upload_document(
         "status": "uploaded",
         "message": "Document uploaded and queued for processing",
     }
+
+@app.get("/documents")
+async def get_documents(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """List all documents for the current user"""
+    documents = db.query(Document).filter(Document.user_id == current_user.id).all()
+    return [
+        {
+            "document_id": doc.id,
+            "filename": doc.filename,
+            "status": doc.status,
+            "created_at": doc.created_at.isoformat() if doc.created_at else None,
+        }
+        for doc in documents
+    ]
 
 @app.get("/")
 def root():
