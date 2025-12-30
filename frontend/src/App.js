@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { AuthContext } from './context/AuthContext';
 import DocumentUpload from './components/DocumentUpload';
+import QueryBox from './components/QueryBox';
 
 function App() {
   const { user, login, register, logout } = useContext(AuthContext);
@@ -30,11 +31,12 @@ function App() {
   // -----------------------------
   if (user) {
     return (
-      <div style={{ padding: '2rem' }}>
+      <div style={{ padding: '2rem', maxWidth: '900px', margin: 'auto' }}>
         <h1>Welcome, {user.full_name || user.email}!</h1>
-        <p>You are logged in.</p>
 
-        {/* ✅ Document Upload & List */}
+        {/* ==========================
+            DOCUMENT UPLOAD
+        ========================== */}
         <DocumentUpload />
 
         <br />

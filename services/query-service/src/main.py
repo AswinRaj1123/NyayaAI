@@ -1,17 +1,26 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from .database import get_db  # Reuse same DB setup
 from .models import Document  # Minimal import
 from .utils.rag import retrieve_relevant_chunks
 from .utils.llm import generate_answer
-from ..auth-service.src.dependencies import get_current_user  # We'll fix path later or duplicate minimal
 
 class QueryRequest(BaseModel):
     document_id: int
     question: str
 
 app = FastAPI(title="NyayaAI Query Service")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Mock auth — replace with real JWT dependency soon
 async def get_current_user_mock():
