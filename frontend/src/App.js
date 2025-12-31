@@ -1,7 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { AuthContext } from './context/AuthContext';
-import DocumentUpload from './components/DocumentUpload';
-import QueryBox from './components/QueryBox';
+import DocumentDashboard from './components/DocumentDashboard';
 
 function App() {
   const { user, login, register, logout } = useContext(AuthContext);
@@ -30,19 +29,7 @@ function App() {
   // LOGGED-IN VIEW
   // -----------------------------
   if (user) {
-    return (
-      <div style={{ padding: '2rem', maxWidth: '900px', margin: 'auto' }}>
-        <h1>Welcome, {user.full_name || user.email}!</h1>
-
-        {/* ==========================
-            DOCUMENT UPLOAD
-        ========================== */}
-        <DocumentUpload />
-
-        <br />
-        <button onClick={logout}>Logout</button>
-      </div>
-    );
+    return <DocumentDashboard />;
   }
 
   // -----------------------------
