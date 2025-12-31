@@ -2,10 +2,8 @@ import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
-const QUERY_API = 'http://localhost:8003';  // Query service port
-
 function QueryBox({ documentId }) {
-  const { token } = useContext(AuthContext);
+  const { token, QUERY_API } = useContext(AuthContext);
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [answer, setAnswer] = useState(null);

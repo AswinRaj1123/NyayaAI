@@ -1,9 +1,14 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from './context/AuthContext';
 import DocumentDashboard from './components/DocumentDashboard';
 
 function App() {
-  const { user, login, register, logout } = useContext(AuthContext);
+  const { user, token, login, register, logout } = useContext(AuthContext);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    setAuthChecked(true);
+  }, []);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,6 +22,9 @@ function App() {
         await register(email, password, name);
         alert('Registered! Now login.');
         setIsRegister(false);
+        setEmail('');
+        setPassword('');
+        setName('');
       } else {
         await login(email, password);
       }
@@ -25,17 +33,13 @@ function App() {
     }
   };
 
-  // -----------------------------
-  // LOGGED-IN VIEW
-  // -----------------------------
-  if (user) {
-    return <DocumentDashboard />;
+  if (!authChecked) {
+    return <p>Loading...</p>;
   }
 
-  // -----------------------------
-  // AUTH VIEW
-  // -----------------------------
-  return (
+  // Always require login first
+  if (!user || !token) {
+    return (
     <div style={{ padding: '2rem', maxWidth: '400px', margin: 'auto' }}>
       <h1>NyayaAI</h1>
       <h2>{isRegister ? 'Register' : 'Login'}</h2>
@@ -87,7 +91,11 @@ function App() {
         </button>
       </p>
     </div>
-  );
+    );
+  }
+
+  // Logged-in view
+  return <DocumentDashboard />;
 }
 
 export default App;

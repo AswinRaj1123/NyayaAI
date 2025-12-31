@@ -1,0 +1,38 @@
+"""Shared JWT authentication dependency for Docker containers."""
+import os
+
+from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import Session, declarative_base
+
+# Import from sibling modules in Docker
+from database import get_db
+
+AuthBase = declarative_base()
+
+# Minimal ORM mapping to the shared users table so we can fetch user.id
+class User(AuthBase):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+
+SECRET_KEY = os.getenv("SECRET_KEY", "your-super-secret-key-change-in-prod")
+ALGORITHM = "HS256"
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://auth-service:8000/login")
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user

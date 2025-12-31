@@ -1,9 +1,14 @@
 fastapi==0.104.1
 uvicorn==0.24.0.post1
 pydantic==2.5.2
+email-validator
 pyjwt==2.8.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.1.2
 psycopg2-binary
+sqlalchemy
+alembic
+python-jose[cryptography]
+python-multipart
 fastapi
 uvicorn

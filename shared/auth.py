@@ -1,3 +1,4 @@
+import importlib.util
 import sys
 from pathlib import Path
 
@@ -7,15 +8,26 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 BASE_DIR = Path(__file__).resolve().parents[1]
-if str(BASE_DIR) not in sys.path:
-    sys.path.append(str(BASE_DIR))
-
 AUTH_SERVICE_SRC = BASE_DIR / "services" / "auth-service" / "src"
-if str(AUTH_SERVICE_SRC) not in sys.path:
-    sys.path.append(str(AUTH_SERVICE_SRC))
 
-from database import get_db  # type: ignore
-from models import User  # type: ignore
+def _import_from_path(name: str, file_path: Path):
+    spec = importlib.util.spec_from_file_location(name, file_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load {name} from {file_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    sys.modules[name] = module
+    return module
+
+auth_models = _import_from_path(
+    "auth_service_models", AUTH_SERVICE_SRC / "models.py"
+)
+auth_database = _import_from_path(
+    "auth_service_database", AUTH_SERVICE_SRC / "database.py"
+)
+
+get_db = auth_database.get_db  # type: ignore
+User = auth_models.User  # type: ignore
 
 SECRET_KEY = "your-super-secret-key-change-in-prod"  # Later move to .env
 ALGORITHM = "HS256"

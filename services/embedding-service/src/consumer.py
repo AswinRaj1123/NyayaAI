@@ -2,9 +2,11 @@ from kafka import KafkaConsumer
 import json
 import os
 from sqlalchemy.orm import Session
-from .database import SessionLocal
-from .models import Document
-from .utils.embedding import generate_and_store_embeddings
+
+# Use absolute imports so this works when main.py is executed as a script
+from database import SessionLocal
+from models import Document
+from utils.embedding import generate_and_store_embeddings
 
 consumer = KafkaConsumer(
     'document_uploaded',

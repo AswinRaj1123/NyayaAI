@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -6,11 +7,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-BASE_DIR = Path(__file__).resolve().parents[3]
-if str(BASE_DIR) not in sys.path:
-    sys.path.append(str(BASE_DIR))
-
-from shared.auth import get_current_user  # type: ignore
+# Handle both local dev and Docker environments
+if os.getenv("DOCKER_ENV"):
+    # In Docker, import from local auth_dependency module
+    from auth_dependency import get_current_user  # type: ignore
+else:
+    # Local development - use shared module
+    BASE_DIR = Path(__file__).resolve().parents[3]
+    if str(BASE_DIR) not in sys.path:
+        sys.path.append(str(BASE_DIR))
+    from shared.auth import get_current_user  # type: ignore
 
 from .database import get_db
 from .models import Document, QueryHistory  # ✅ ADD QueryHistory

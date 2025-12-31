@@ -3,7 +3,9 @@ import axios from 'axios';
 
 export const AuthContext = createContext();
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = process.env.REACT_APP_AUTH_API || 'http://localhost:8000';
+const UPLOAD_API = process.env.REACT_APP_UPLOAD_API || 'http://localhost:8001';
+const QUERY_API = process.env.REACT_APP_QUERY_API || 'http://localhost:8003';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -39,7 +41,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, API_BASE, UPLOAD_API, QUERY_API }}>
       {children}
     </AuthContext.Provider>
   );

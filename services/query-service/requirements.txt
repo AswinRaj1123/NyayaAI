@@ -6,4 +6,5 @@ uvicorn
 sqlalchemy
 openai
 pyjwt
-sqlalchemy
+python-jose[cryptography]
+psycopg2-binary

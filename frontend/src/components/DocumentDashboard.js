@@ -2,12 +2,9 @@ import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import DocumentUpload from './DocumentUpload';
-import QueryBox from './QueryBox';
-
-const UPLOAD_API = 'http://localhost:8001';
 
 function DocumentDashboard() {
-  const { token } = useContext(AuthContext);
+  const { token, UPLOAD_API } = useContext(AuthContext);
   const [documents, setDocuments] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -70,7 +67,9 @@ function DocumentDashboard() {
       {selectedDoc && selectedDoc.status === 'ready' && (
         <div style={{ marginTop: '3rem' }}>
           <h2>Chat with: {selectedDoc.filename}</h2>
-          <QueryBox documentId={selectedDoc.id} />
+          <div style={{ marginTop: '2rem', padding: '1.5rem', border: '1px solid #ddd', borderRadius: '10px' }}>
+            <AskQuestionSection documentId={selectedDoc.id} />
+          </div>
         </div>
       )}
 
@@ -78,6 +77,62 @@ function DocumentDashboard() {
         <strong>Disclaimer:</strong> NyayaAI is for legal awareness only. It is not legal advice. Always consult a qualified lawyer.
       </div>
     </div>
+  );
+}
+
+function AskQuestionSection({ documentId }) {
+  const { token, QUERY_API } = useContext(AuthContext);
+  const [question, setQuestion] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [answer, setAnswer] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!question.trim()) return;
+    
+    setLoading(true);
+    setAnswer(null);
+    
+    try {
+      const res = await axios.post(`${QUERY_API}/query`, {
+        document_id: documentId,
+        question: question
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAnswer(res.data);
+      setQuestion('');
+    } catch (err) {
+      alert('Error: ' + (err.response?.data?.detail || err.message));
+    }
+    setLoading(false);
+  };
+
+  return (
+    <>
+      <h3>Ask a Question About Your Document</h3>
+      <form onSubmit={handleSubmit}>
+        <textarea
+          rows="3"
+          placeholder="e.g., What are my responsibilities in this document?"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          style={{ width: '100%', padding: '10px', fontSize: '16px' }}
+          required
+        />
+        <button type="submit" disabled={loading} style={{ marginTop: '10px', padding: '10px 20px' }}>
+          {loading ? 'Thinking...' : 'Ask'}
+        </button>
+      </form>
+      
+      {answer && (
+        <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fffe', borderRadius: '8px', border: '1px solid #0fb5a8' }}>
+          <h4>Answer:</h4>
+          <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{answer.answer}</p>
+          <small>{answer.sources} relevant sections used</small>
+        </div>
+      )}
+    </>
   );
 }
 

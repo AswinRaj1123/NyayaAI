@@ -1,12 +1,21 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+import sys
+from pathlib import Path
+
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from .database import get_db, Base, engine
-from .models import User
-from .schemas import UserCreate, UserOut, Token
-from .utils.auth import get_password_hash, verify_password, create_access_token
-from .dependencies import get_current_user
+
+# Ensure local src is first on sys.path (works for both local and Docker)
+SRC_DIR = Path(__file__).resolve().parent
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+from database import Base, engine, get_db
+from dependencies import get_current_user
+from models import User
+from schemas import Token, UserCreate, UserOut
+from utils.auth import create_access_token, get_password_hash, verify_password
 
 # Create tables if not exist (for dev only — migrations in prod)
 Base.metadata.create_all(bind=engine)

@@ -1,10 +1,18 @@
 version: '3.8'
+
 services:
+  # -----------------------------
+  # ZOOKEEPER
+  # -----------------------------
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+
+  # -----------------------------
+  # KAFKA
+  # -----------------------------
   kafka:
     image: confluentinc/cp-kafka:7.3.0
     depends_on:
@@ -14,8 +22,13 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  # -----------------------------
+  # POSTGRES
+  # -----------------------------
   postgres:
     image: postgres:14
     environment:
@@ -24,3 +37,58 @@ services:
       POSTGRES_DB: nyayaai
     ports:
       - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # -----------------------------
+  # AUTH SERVICE
+  # -----------------------------
+  auth-service:
+    build: ./services/auth-service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://user:pass@postgres:5432/nyayaai
+      DOCKER_ENV: "true"
+      SECRET_KEY: "your-super-secret-key-change-in-prod"
+
+  # -----------------------------
+  # UPLOAD SERVICE
+  # -----------------------------
+  upload-service:
+    build: ./services/upload-service
+    ports:
+      - "8001:8001"
+    depends_on:
+      - postgres
+      - kafka
+    environment:
+      DATABASE_URL: postgresql://user:pass@postgres:5432/nyayaai
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      UPLOAD_DIR: /app/uploads
+      DOCKER_ENV: "true"
+      SECRET_KEY: "your-super-secret-key-change-in-prod"
+    volumes:
+      - uploads:/app/uploads
+  embedding-service:
+    build: ./services/embedding-service
+    ports:
+      - "8002:8002"
+    depends_on:
+      - postgres
+      - kafka
+    environment:
+      DATABASE_URL: postgresql://user:pass@postgres:5432/nyayaai
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DOCKER_ENV: "true"
+    stdin_open: true
+    tty: true
+
+# -----------------------------
+# VOLUMES
+# -----------------------------
+volumes:
+  postgres_data:
+  uploads:

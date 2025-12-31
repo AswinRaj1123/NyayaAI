@@ -3,21 +3,37 @@ import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
-
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+import asyncio
 
-BASE_DIR = Path(__file__).resolve().parents[3]
-if str(BASE_DIR) not in sys.path:
-    sys.path.append(str(BASE_DIR))
+# Ensure local package path is first so we import this service's modules
+SRC_DIR = Path(__file__).resolve().parent
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 
-from shared.auth import User, get_current_user  # type: ignore
+# If another service already loaded a different `models`, drop it so we load ours
+import sys as _sys
+_existing_models = _sys.modules.get("models")
+if _existing_models and getattr(_existing_models, "__file__", "").replace("\\", "/") != str(SRC_DIR / "models.py").replace("\\", "/"):
+    del _sys.modules["models"]
 
-from .database import engine, get_db
-from .models import Base, Document
-from .utils.extraction import extract_text
-from .utils.kafka_producer import publish_document_uploaded
+# Load local database/models first
+from database import engine, get_db
+from models import Base, Document
+
+# Handle both local dev and Docker environments
+if os.getenv("DOCKER_ENV"):
+    from auth_dependency import User, get_current_user  # type: ignore
+else:
+    BASE_DIR = Path(__file__).resolve().parents[3]
+    if str(BASE_DIR) not in sys.path:
+        sys.path.insert(0, str(BASE_DIR))
+    from shared.auth import User, get_current_user  # type: ignore
+
+from utils.extraction import extract_text
+from utils.kafka_producer import publish_document_uploaded
 
 # -----------------------------
 # APP INIT
@@ -127,9 +143,11 @@ def list_documents(
 
     return [
         {
+            "document_id": d.id,
             "id": d.id,
             "filename": d.filename,
             "status": d.status,
+            "created_at": d.created_at.isoformat() if d.created_at else None,
             "uploaded_at": d.created_at.isoformat() if d.created_at else None,
         }
         for d in docs

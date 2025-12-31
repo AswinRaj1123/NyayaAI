@@ -1,1 +1,8 @@
-pip install kafka-python chromadb sentence-transformers tqdm sqlalchemy
+kafka-python
+chromadb
+sentence-transformers
+tqdm
+sqlalchemy
+psycopg2-binary
+fastapi
+uvicorn
