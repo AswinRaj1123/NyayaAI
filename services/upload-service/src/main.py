@@ -1,47 +1,23 @@
-from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status, Header
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 import os
+import sys
 import uuid
 from datetime import datetime
-from jose import JWTError, jwt
+from pathlib import Path
 
-from .database import get_db, engine
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+
+BASE_DIR = Path(__file__).resolve().parents[3]
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
+from shared.auth import User, get_current_user  # type: ignore
+
+from .database import engine, get_db
 from .models import Base, Document
 from .utils.extraction import extract_text
 from .utils.kafka_producer import publish_document_uploaded
-
-# Constants (match auth-service)
-SECRET_KEY = "your-super-secret-key-change-in-prod"
-ALGORITHM = "HS256"
-
-class User:
-    def __init__(self, email: str):
-        self.email = email
-        self.id = 1  # Placeholder
-
-async def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)):
-    """
-    Validate JWT token from Authorization header
-    """
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Missing authorization header")
-    
-    try:
-        scheme, token = authorization.split()
-        if scheme.lower() != "bearer":
-            raise HTTPException(status_code=401, detail="Invalid authentication scheme")
-        
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-    except ValueError:
-        raise HTTPException(status_code=401, detail="Invalid authorization header format")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    return User(email=email)
 
 # -----------------------------
 # APP INIT

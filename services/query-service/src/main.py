@@ -1,7 +1,17 @@
-from fastapi import FastAPI, Depends, HTTPException
+import sys
+from pathlib import Path
+
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+
+BASE_DIR = Path(__file__).resolve().parents[3]
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
+from shared.auth import get_current_user  # type: ignore
+
 from .database import get_db  # Reuse same DB setup
 from .models import Document  # Minimal import
 from .utils.rag import retrieve_relevant_chunks
@@ -22,10 +32,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mock auth — replace with real JWT dependency soon
-async def get_current_user_mock():
-    return type('User', (), {'id': 1})()
-
 def verify_document_ownership(document_id: int, user_id: int, db: Session):
     doc = db.query(Document).filter(Document.id == document_id, Document.user_id == user_id).first()
     if not doc:
@@ -37,7 +43,7 @@ def verify_document_ownership(document_id: int, user_id: int, db: Session):
 @app.post("/query")
 async def ask_question(
     request: QueryRequest,
-    current_user = Depends(get_current_user_mock),
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     verify_document_ownership(request.document_id, current_user.id, db)

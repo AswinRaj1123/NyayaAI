@@ -9,3 +9,5 @@ fastapi
 uvicorn
 python-jose
 cryptography
+pyjwt
+sqlalchemy

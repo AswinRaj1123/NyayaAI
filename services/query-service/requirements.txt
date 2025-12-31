@@ -5,3 +5,5 @@ fastapi
 uvicorn
 sqlalchemy
 openai
+pyjwt
+sqlalchemy
