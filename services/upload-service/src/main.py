@@ -114,22 +114,23 @@ async def upload_document(
     }
 
 @app.get("/documents")
-async def get_documents(
+def list_documents(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """List all documents for the current user"""
-    documents = db.query(Document).filter(Document.user_id == current_user.id).all()
+    docs = (
+        db.query(Document)
+        .filter(Document.user_id == current_user.id)
+        .all()
+    )
+
     return [
         {
-            "document_id": doc.id,
-            "filename": doc.filename,
-            "status": doc.status,
-            "created_at": doc.created_at.isoformat() if doc.created_at else None,
+            "id": d.id,
+            "filename": d.filename,
+            "status": d.status,
+            "uploaded_at": d.created_at.isoformat() if d.created_at else None,
         }
-        for doc in documents
+        for d in docs
     ]
-
-@app.get("/")
-def root():
-    return {"message": "NyayaAI Upload Service is running"}

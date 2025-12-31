@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
@@ -23,3 +23,17 @@ class Document(Base):
     )  # uploaded → processing → ready → error
 
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class QueryHistory(Base):
+    __tablename__ = "query_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # FK to documents table
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
+
+    question = Column(Text, nullable=False)
+    answer = Column(Text, nullable=False)
+
+    asked_at = Column(DateTime, default=datetime.utcnow)
