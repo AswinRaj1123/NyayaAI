@@ -40,56 +40,146 @@ function App() {
   // Always require login first
   if (!user || !token) {
     return (
-    <div style={{ padding: '2rem', maxWidth: '400px', margin: 'auto' }}>
-      <h1>NyayaAI</h1>
-      <h2>{isRegister ? 'Register' : 'Login'}</h2>
+    <div style={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      padding: '2rem'
+    }}>
+      <div style={{ 
+        width: '100%', 
+        maxWidth: '420px',
+        backgroundColor: 'var(--color-bg-secondary)',
+        borderRadius: 'var(--radius-xl)',
+        padding: '2.5rem',
+        border: '1px solid var(--color-border-primary)',
+        boxShadow: 'var(--shadow-lg)'
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+            NyayaAI
+          </h1>
+          <p style={{ 
+            color: 'var(--color-text-secondary)', 
+            fontSize: '0.9375rem',
+            marginBottom: 0
+          }}>
+            Your Legal Awareness Assistant
+          </p>
+        </div>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-        />
-        <br /><br />
+        <div style={{ 
+          marginBottom: '1.5rem',
+          display: 'flex',
+          gap: '0.5rem',
+          padding: '0.25rem',
+          backgroundColor: 'var(--color-bg-tertiary)',
+          borderRadius: 'var(--radius-md)'
+        }}>
+          <button
+            type="button"
+            onClick={() => setIsRegister(false)}
+            className="secondary"
+            style={{
+              flex: 1,
+              padding: '0.5rem',
+              backgroundColor: !isRegister ? 'var(--color-bg-secondary)' : 'transparent',
+              color: !isRegister ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+              border: !isRegister ? '1px solid var(--color-border-primary)' : 'none',
+              boxShadow: !isRegister ? 'var(--shadow-sm)' : 'none'
+            }}
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsRegister(true)}
+            className="secondary"
+            style={{
+              flex: 1,
+              padding: '0.5rem',
+              backgroundColor: isRegister ? 'var(--color-bg-secondary)' : 'transparent',
+              color: isRegister ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+              border: isRegister ? '1px solid var(--color-border-primary)' : 'none',
+              boxShadow: isRegister ? 'var(--shadow-sm)' : 'none'
+            }}
+          >
+            Register
+          </button>
+        </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-        />
-        <br /><br />
-
-        {isRegister && (
-          <>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '0.5rem', 
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              color: 'var(--color-text-primary)'
+            }}>
+              Email
+            </label>
             <input
-              type="text"
-              placeholder="Full Name"
-              value={name}
-              onChange={e => setName(e.target.value)}
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
             />
-            <br /><br />
-          </>
-        )}
+          </div>
 
-        <button type="submit">
-          {isRegister ? 'Register' : 'Login'}
-        </button>
-      </form>
+          <div>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '0.5rem', 
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              color: 'var(--color-text-primary)'
+            }}>
+              Password
+            </label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
-      <p>
-        {isRegister ? 'Already have an account?' : "Don't have an account?"}
-        <button
-          type="button"
-          onClick={() => setIsRegister(!isRegister)}
-          style={{ marginLeft: '0.5rem' }}
-        >
-          {isRegister ? 'Login' : 'Register'}
-        </button>
-      </p>
+          {isRegister && (
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem', 
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                color: 'var(--color-text-primary)'
+              }}>
+                Full Name
+              </label>
+              <input
+                type="text"
+                placeholder="Your name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+              />
+            </div>
+          )}
+
+          <button 
+            type="submit" 
+            style={{ 
+              marginTop: '0.5rem',
+              padding: '0.75rem',
+              fontSize: '1rem'
+            }}
+          >
+            {isRegister ? 'Create Account' : 'Sign In'}
+          </button>
+        </form>
+      </div>
     </div>
     );
   }

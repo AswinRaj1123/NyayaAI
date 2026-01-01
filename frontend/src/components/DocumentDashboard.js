@@ -30,72 +30,148 @@ function DocumentDashboard() {
   }, [token]);
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1000px', margin: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h1 style={{ margin: 0 }}>NyayaAI — Your Legal Awareness Assistant</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontSize: '14px', color: '#666' }}>
-            {user?.full_name || user?.email}
-          </span>
-          <button 
-            onClick={logout}
-            style={{ 
-              padding: '8px 16px', 
-              background: '#dc3545', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '6px', 
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-      <DocumentUpload onUploadSuccess={fetchDocuments} />
-
-      <h2 style={{ marginTop: '3rem' }}>Your Documents</h2>
-      {loading ? <p>Loading...</p> : (
-        documents.length === 0 ? <p>No documents yet. Upload one above!</p> :
-        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-          {documents.map(doc => (
-            <div
-              key={doc.id}
-              style={{
-                padding: '1.5rem',
-                border: '2px solid #ccc',
-                borderRadius: '12px',
-                cursor: doc.status === 'ready' ? 'pointer' : 'default',
-                background: selectedDoc?.id === doc.id ? '#e6f7ff' : '#fff'
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)' }}>
+      {/* Header */}
+      <div style={{ 
+        backgroundColor: 'var(--color-bg-secondary)', 
+        borderBottom: '1px solid var(--color-border-primary)',
+        padding: '1.25rem 2rem'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '600' }}>NyayaAI</h1>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+              Your Legal Awareness Assistant
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+              {user?.full_name || user?.email}
+            </span>
+            <button 
+              onClick={logout}
+              className="danger"
+              style={{ 
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem'
               }}
-              onClick={() => doc.status === 'ready' && setSelectedDoc(doc)}
             >
-              <h3>{doc.filename}</h3>
-              <p><strong>Status:</strong> 
-                <span style={{
-                  color: doc.status === 'ready' ? 'green' : doc.status === 'error' ? 'red' : 'orange'
-                }}>
-                  {doc.status === 'uploaded' ? 'Uploaded' : doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
-                </span>
-              </p>
-              <small>Uploaded: {new Date(doc.uploaded_at).toLocaleString()}</small>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {selectedDoc && selectedDoc.status === 'ready' && (
-        <div style={{ marginTop: '3rem' }}>
-          <h2>Chat with: {selectedDoc.filename}</h2>
-          <div style={{ marginTop: '2rem', padding: '1.5rem', border: '1px solid #ddd', borderRadius: '10px' }}>
-            <AskQuestionSection documentId={selectedDoc.id} />
+              Logout
+            </button>
           </div>
         </div>
-      )}
+      </div>
 
-      <div style={{ marginTop: '4rem', padding: '1.5rem', background: '#fff3cd', borderRadius: '8px' }}>
-        <strong>Disclaimer:</strong> NyayaAI is for legal awareness only. It is not legal advice. Always consult a qualified lawyer.
+      {/* Main Content */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+        <DocumentUpload onUploadSuccess={fetchDocuments} />
+
+        <div style={{ marginTop: '2.5rem' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Your Documents</h2>
+          {loading ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '3rem',
+              color: 'var(--color-text-secondary)'
+            }}>
+              Loading your documents...
+            </div>
+          ) : documents.length === 0 ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '3rem',
+              backgroundColor: 'var(--color-bg-secondary)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border-primary)'
+            }}>
+              <p style={{ color: 'var(--color-text-secondary)', marginBottom: 0 }}>
+                No documents yet. Upload one above to get started!
+              </p>
+            </div>
+          ) : (
+            <div style={{ 
+              display: 'grid', 
+              gap: '1rem', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' 
+            }}>
+              {documents.map(doc => (
+                <div
+                  key={doc.id}
+                  className="card"
+                  style={{
+                    cursor: doc.status === 'ready' ? 'pointer' : 'default',
+                    backgroundColor: selectedDoc?.id === doc.id ? 'var(--color-bg-tertiary)' : 'var(--color-bg-secondary)',
+                    border: selectedDoc?.id === doc.id ? '2px solid var(--color-accent)' : '1px solid var(--color-border-primary)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={() => doc.status === 'ready' && setSelectedDoc(doc)}
+                >
+                  <h3 style={{ 
+                    fontSize: '1rem', 
+                    fontWeight: '600',
+                    marginBottom: '0.75rem',
+                    wordBreak: 'break-word'
+                  }}>
+                    {doc.filename}
+                  </h3>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                      Status: 
+                    </span>
+                    <span className={`status-badge status-${doc.status === 'uploaded' ? 'processing' : doc.status}`}>
+                      {doc.status === 'uploaded' ? 'Processing' : doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
+                    </span>
+                  </div>
+                  <p style={{ 
+                    fontSize: '0.75rem', 
+                    color: 'var(--color-text-tertiary)',
+                    marginBottom: 0
+                  }}>
+                    Uploaded {new Date(doc.uploaded_at).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {selectedDoc && selectedDoc.status === 'ready' && (
+          <div style={{ marginTop: '2.5rem' }}>
+            <div style={{ 
+              backgroundColor: 'var(--color-bg-secondary)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border-primary)',
+              padding: '1.5rem'
+            }}>
+              <div style={{ 
+                marginBottom: '1rem',
+                paddingBottom: '1rem',
+                borderBottom: '1px solid var(--color-border-primary)'
+              }}>
+                <h2 style={{ fontSize: '1.125rem', margin: 0 }}>
+                  Chat with: <span style={{ color: 'var(--color-text-secondary)' }}>{selectedDoc.filename}</span>
+                </h2>
+              </div>
+              <AskQuestionSection documentId={selectedDoc.id} />
+            </div>
+          </div>
+        )}
+
+        {/* Disclaimer */}
+        <div style={{ 
+          marginTop: '3rem', 
+          padding: '1.25rem 1.5rem',
+          backgroundColor: '#fef3c7',
+          border: '1px solid #fcd34d',
+          borderRadius: 'var(--radius-lg)',
+          fontSize: '0.875rem',
+          lineHeight: '1.5'
+        }}>
+          <strong style={{ color: 'var(--color-text-primary)' }}>Disclaimer:</strong>{' '}
+          <span style={{ color: 'var(--color-text-secondary)' }}>
+            NyayaAI is for legal awareness only. It is not legal advice. Always consult a qualified lawyer for legal matters.
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -131,26 +207,75 @@ function AskQuestionSection({ documentId }) {
 
   return (
     <>
-      <h3>Ask a Question About Your Document</h3>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} style={{ marginBottom: '1.5rem' }}>
+        <label style={{ 
+          display: 'block', 
+          marginBottom: '0.75rem', 
+          fontSize: '0.9375rem',
+          fontWeight: '500',
+          color: 'var(--color-text-primary)'
+        }}>
+          Ask a question about your document
+        </label>
         <textarea
-          rows="3"
-          placeholder="e.g., What are my responsibilities in this document?"
+          rows="4"
+          placeholder="e.g., What are my responsibilities in this document? (You can type in Hindi or English)"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          style={{ width: '100%', padding: '10px', fontSize: '16px' }}
+          style={{ 
+            fontSize: '0.9375rem',
+            marginBottom: '0.75rem'
+          }}
           required
         />
-        <button type="submit" disabled={loading} style={{ marginTop: '10px', padding: '10px 20px' }}>
-          {loading ? 'Thinking...' : 'Ask'}
+        <button 
+          type="submit" 
+          disabled={loading}
+          style={{ 
+            width: '100%',
+            padding: '0.75rem',
+            fontSize: '0.9375rem',
+            fontWeight: '500'
+          }}
+        >
+          {loading ? 'Thinking...' : 'Ask Question'}
         </button>
       </form>
       
       {answer && (
-        <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fffe', borderRadius: '8px', border: '1px solid #0fb5a8' }}>
-          <h4>Answer:</h4>
-          <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{answer.answer}</p>
-          <small>{answer.sources} relevant sections used</small>
+        <div style={{ 
+          padding: '1.5rem',
+          backgroundColor: 'var(--color-bg-tertiary)',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--color-border-primary)'
+        }}>
+          <h4 style={{ 
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            color: 'var(--color-text-secondary)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            marginBottom: '0.75rem'
+          }}>
+            Answer
+          </h4>
+          <p style={{ 
+            whiteSpace: 'pre-wrap', 
+            lineHeight: '1.7',
+            fontSize: '0.9375rem',
+            color: 'var(--color-text-primary)',
+            marginBottom: '1rem'
+          }}>
+            {answer.answer}
+          </p>
+          <div style={{ 
+            fontSize: '0.75rem',
+            color: 'var(--color-text-tertiary)',
+            paddingTop: '0.75rem',
+            borderTop: '1px solid var(--color-border-primary)'
+          }}>
+            {answer.sources} relevant sections used
+          </div>
         </div>
       )}
     </>
