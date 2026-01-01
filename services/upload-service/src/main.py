@@ -3,74 +3,98 @@ import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
+
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-import asyncio
 
-# Ensure local package path is first so we import this service's modules
+# ------------------------------------------------------------------
+# Ensure this service's src path is first
+# ------------------------------------------------------------------
 SRC_DIR = Path(__file__).resolve().parent
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-# If another service already loaded a different `models`, drop it so we load ours
+# Prevent cross-service model conflicts
 import sys as _sys
 _existing_models = _sys.modules.get("models")
 if _existing_models and getattr(_existing_models, "__file__", "").replace("\\", "/") != str(SRC_DIR / "models.py").replace("\\", "/"):
     del _sys.modules["models"]
 
-# Load local database/models first
+# ------------------------------------------------------------------
+# Local imports (upload-service specific)
+# ------------------------------------------------------------------
 from database import engine, get_db
-from models import Base, Document
+from models import Base, Document, QueryHistory
 
-# Handle both local dev and Docker environments
+# Auth handling (Docker vs local)
 if os.getenv("DOCKER_ENV"):
     from auth_dependency import User, get_current_user  # type: ignore
 else:
-    # Local development - traverse to repo root
     try:
         BASE_DIR = Path(__file__).resolve().parents[3]
     except IndexError:
-        # Fallback if path depth is insufficient
         BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
     if str(BASE_DIR) not in sys.path:
         sys.path.insert(0, str(BASE_DIR))
+
     from shared.auth import User, get_current_user  # type: ignore
 
 from utils.extraction import extract_text
 from utils.kafka_producer import publish_document_uploaded
 
-# -----------------------------
+# ------------------------------------------------------------------
 # APP INIT
-# -----------------------------
+# ------------------------------------------------------------------
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="NyayaAI Upload Service")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# -----------------------------
+# ------------------------------------------------------------------
 # UPLOAD DIRECTORY
-# -----------------------------
+# ------------------------------------------------------------------
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/app/uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# -----------------------------
+# ------------------------------------------------------------------
+# HELPERS
+# ------------------------------------------------------------------
+def verify_document_ownership(doc_id: int, user_id: int, db: Session):
+    document = (
+        db.query(Document)
+        .filter(Document.id == doc_id, Document.user_id == user_id)
+        .first()
+    )
+
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found or access denied",
+        )
+
+    return document
+
+# ------------------------------------------------------------------
 # ROUTES
-# -----------------------------
+# ------------------------------------------------------------------
 @app.post("/upload", status_code=status.HTTP_201_CREATED)
 async def upload_document(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    # Validate file type
     allowed_types = [
         "application/pdf",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -83,7 +107,6 @@ async def upload_document(
             detail="Invalid file type. Only PDF, DOCX, and TXT allowed.",
         )
 
-    # Read file content (FastAPI does NOT give file.size reliably)
     content = await file.read()
 
     if len(content) > 20 * 1024 * 1024:
@@ -92,7 +115,6 @@ async def upload_document(
             detail="File too large (max 20MB)",
         )
 
-    # Save file
     file_extension = os.path.splitext(file.filename)[1]
     unique_filename = f"{uuid.uuid4()}{file_extension}"
     file_path = os.path.join(UPLOAD_DIR, unique_filename)
@@ -100,10 +122,8 @@ async def upload_document(
     with open(file_path, "wb") as f:
         f.write(content)
 
-    # Extract text
     extracted_text = extract_text(file_path, file.filename)
 
-    # Save document record
     document = Document(
         user_id=current_user.id,
         filename=file.filename,
@@ -116,7 +136,6 @@ async def upload_document(
     db.commit()
     db.refresh(document)
 
-    # Publish Kafka event
     event = {
         "document_id": document.id,
         "user_id": current_user.id,
@@ -134,12 +153,14 @@ async def upload_document(
         "message": "Document uploaded and queued for processing",
     }
 
+# ------------------------------------------------------------------
+# LIST DOCUMENTS
+# ------------------------------------------------------------------
 @app.get("/documents")
 def list_documents(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    """List all documents for the current user"""
     docs = (
         db.query(Document)
         .filter(Document.user_id == current_user.id)
@@ -156,4 +177,31 @@ def list_documents(
             "uploaded_at": d.created_at.isoformat() if d.created_at else None,
         }
         for d in docs
+    ]
+
+# ------------------------------------------------------------------
+# DOCUMENT CHAT HISTORY (STAGE 5)
+# ------------------------------------------------------------------
+@app.get("/documents/{doc_id}/history")
+def get_document_history(
+    doc_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    verify_document_ownership(doc_id, current_user.id, db)
+
+    history = (
+        db.query(QueryHistory)
+        .filter(QueryHistory.document_id == doc_id)
+        .order_by(QueryHistory.asked_at)
+        .all()
+    )
+
+    return [
+        {
+            "question": h.question,
+            "answer": h.answer,
+            "asked_at": h.asked_at.isoformat() if h.asked_at else None,
+        }
+        for h in history
     ]
