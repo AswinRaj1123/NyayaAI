@@ -13,15 +13,19 @@ if os.getenv("DOCKER_ENV"):
     from auth_dependency import get_current_user  # type: ignore
 else:
     # Local development - use shared module
-    BASE_DIR = Path(__file__).resolve().parents[3]
+    try:
+        BASE_DIR = Path(__file__).resolve().parents[3]
+    except IndexError:
+        # Fallback if path depth is insufficient
+        BASE_DIR = Path(__file__).resolve().parent.parent.parent
     if str(BASE_DIR) not in sys.path:
         sys.path.append(str(BASE_DIR))
     from shared.auth import get_current_user  # type: ignore
 
-from .database import get_db
-from .models import Document, QueryHistory  # ✅ ADD QueryHistory
-from .utils.rag import retrieve_relevant_chunks
-from .utils.llm import generate_answer
+from database import get_db
+from models import Document, QueryHistory  # ✅ ADD QueryHistory
+from utils.rag import retrieve_relevant_chunks
+from utils.llm import generate_answer
 
 
 class QueryRequest(BaseModel):

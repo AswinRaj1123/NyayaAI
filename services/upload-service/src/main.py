@@ -27,7 +27,12 @@ from models import Base, Document
 if os.getenv("DOCKER_ENV"):
     from auth_dependency import User, get_current_user  # type: ignore
 else:
-    BASE_DIR = Path(__file__).resolve().parents[3]
+    # Local development - traverse to repo root
+    try:
+        BASE_DIR = Path(__file__).resolve().parents[3]
+    except IndexError:
+        # Fallback if path depth is insufficient
+        BASE_DIR = Path(__file__).resolve().parent.parent.parent
     if str(BASE_DIR) not in sys.path:
         sys.path.insert(0, str(BASE_DIR))
     from shared.auth import User, get_current_user  # type: ignore

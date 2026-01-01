@@ -5,6 +5,7 @@ fastapi
 uvicorn
 sqlalchemy
 openai
+ollama
 pyjwt
 python-jose[cryptography]
 psycopg2-binary
