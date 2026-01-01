@@ -1,3 +1,17 @@
+"""  
+NyayaAI Upload Service
+
+This service handles document uploads and management:
+- Upload legal documents (PDF, DOCX, TXT)
+- Extract text from uploaded files
+- Store document metadata in database
+- Publish events to Kafka for processing by Embedding Service
+- Track document processing status
+- Manage query history for each document
+
+Technology: FastAPI, SQLAlchemy, Kafka, File Processing
+"""
+
 import os
 import sys
 import uuid
@@ -8,24 +22,29 @@ from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-# ------------------------------------------------------------------
-# Ensure this service's src path is first
-# ------------------------------------------------------------------
+# ==============================================================================
+# PATH SETUP
+# ==============================================================================
+# Ensure this service's source directory is first in the Python import path
 SRC_DIR = Path(__file__).resolve().parent
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-# Prevent cross-service model conflicts
+# ==============================================================================
+# PREVENT MODEL CONFLICTS BETWEEN SERVICES
+# ==============================================================================
+# When multiple services import "models", Python might load the wrong one
+# This code ensures we load THIS service's models.py, not another service's
 import sys as _sys
 _existing_models = _sys.modules.get("models")
 if _existing_models and getattr(_existing_models, "__file__", "").replace("\\", "/") != str(SRC_DIR / "models.py").replace("\\", "/"):
     del _sys.modules["models"]
 
-# ------------------------------------------------------------------
-# Local imports (upload-service specific)
-# ------------------------------------------------------------------
-from database import engine, get_db
-from models import Base, Document, QueryHistory
+# ==============================================================================
+# IMPORT LOCAL MODULES (UPLOAD-SERVICE SPECIFIC)
+# ==============================================================================
+from database import engine, get_db  # Database connection
+from models import Base, Document, QueryHistory  # Database models
 
 # Auth handling (Docker vs local)
 if os.getenv("DOCKER_ENV"):
