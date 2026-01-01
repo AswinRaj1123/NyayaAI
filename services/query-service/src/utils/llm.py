@@ -1,4 +1,9 @@
 import ollama
+import os
+
+# Configure Ollama host
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+ollama_client = ollama.Client(host=OLLAMA_HOST)
 
 SYSTEM_PROMPT = """
 You are NyayaAI, a legal awareness assistant for common citizens in India.
@@ -28,7 +33,7 @@ Explain in simple language. Be step-by-step if needed.
 """
 
     try:
-        response = ollama.chat(
+        response = ollama_client.chat(
             model='llama3.2:3b',  # or just 'llama3.2' for larger
             messages=[
                 {'role': 'system', 'content': SYSTEM_PROMPT},

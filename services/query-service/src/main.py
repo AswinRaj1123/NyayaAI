@@ -22,10 +22,19 @@ else:
         sys.path.append(str(BASE_DIR))
     from shared.auth import get_current_user  # type: ignore
 
-from database import get_db
-from models import Document, QueryHistory  # ✅ ADD QueryHistory
-from utils.rag import retrieve_relevant_chunks
-from utils.llm import generate_answer
+# Conditional imports based on environment
+if os.getenv("DOCKER_ENV"):
+    # Docker: use absolute imports
+    from database import get_db
+    from models import Document, QueryHistory
+    from utils.rag import retrieve_relevant_chunks
+    from utils.llm import generate_answer
+else:
+    # Local: use relative imports
+    from .database import get_db
+    from .models import Document, QueryHistory
+    from .utils.rag import retrieve_relevant_chunks
+    from .utils.llm import generate_answer
 
 
 class QueryRequest(BaseModel):

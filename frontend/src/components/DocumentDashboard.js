@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import DocumentUpload from './DocumentUpload';
 
 function DocumentDashboard() {
-  const { token, UPLOAD_API } = useContext(AuthContext);
+  const { token, user, logout, UPLOAD_API } = useContext(AuthContext);
   const [documents, setDocuments] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,28 @@ function DocumentDashboard() {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1000px', margin: 'auto' }}>
-      <h1>NyayaAI — Your Legal Awareness Assistant</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h1 style={{ margin: 0 }}>NyayaAI — Your Legal Awareness Assistant</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span style={{ fontSize: '14px', color: '#666' }}>
+            {user?.full_name || user?.email}
+          </span>
+          <button 
+            onClick={logout}
+            style={{ 
+              padding: '8px 16px', 
+              background: '#dc3545', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '6px', 
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Logout
+          </button>
+        </div>
+      </div>
       <DocumentUpload onUploadSuccess={fetchDocuments} />
 
       <h2 style={{ marginTop: '3rem' }}>Your Documents</h2>

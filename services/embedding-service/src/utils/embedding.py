@@ -1,11 +1,13 @@
 from sentence_transformers import SentenceTransformer
 import chromadb
 from chromadb.config import Settings
+import os
 
 # Load model once
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-CHROMA_PATH = "../../chroma_db"
+# Use Docker path when in Docker, relative path for local dev
+CHROMA_PATH = "/app/chroma_db" if os.getenv("DOCKER_ENV") else "../../chroma_db"
 client = chromadb.PersistentClient(path=CHROMA_PATH)
 
 
